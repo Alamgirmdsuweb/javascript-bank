@@ -1,0 +1,267 @@
+let table = [];
+// console.log(table);
+let Balance = [];
+
+console.log(Balance);
+
+let DB;
+var email = location.search.split("name")[1];
+// console.log(email);
+
+// create the database
+
+const Bank = "LoginData";
+let request = window.indexedDB.open("Bank", 1);
+// console.log(request);
+
+request.onerror = function () {
+    // console.log("error");
+};
+
+request.onsuccess = function () {
+    DB = request.result;
+    // console.log(DB);
+    showData();
+};
+
+request.onupgradeneeded = function (e) {
+    let db = e.target.result;
+
+    let objectStore = db.createObjectStore("Data", { autoIncrement: true });
+    // console.log(objectStore);
+
+    objectStore.createIndex("Type", "Type", { unique: false });
+    objectStore.createIndex("Email", "Email", { unique: false });
+    objectStore.createIndex("Amount", "Amount", { unique: false });
+    objectStore.createIndex("Previous_Balance", "Previous_Balance", {
+        unique: false,
+    });
+    objectStore.createIndex("Current_Balance", "Current_Balance", {
+        unique: false,
+    });
+    objectStore.createIndex("Time", "Time", { unique: false });
+};
+
+function addData(data) {
+    let transaction = DB.transaction("Data", "readwrite");
+    let objectStore = transaction.objectStore("Data");
+    // console.log(objectStore, data);
+
+    let request = objectStore.add(data);
+
+    request.onsuccess = () => {};
+    transaction.oncomplete = () => {
+        showData();
+    };
+    transaction.onerror = () => {};
+}
+function showData() {
+    let StoreData = [];
+
+    let transaction = DB.transaction("Data", "readwrite");
+    let objectStore = transaction.objectStore("Data");
+    let getReq = objectStore.getAll();
+    getReq.onsuccess = (e) => {
+        let data = [];
+        let newRequest = e.target;
+        StoreData = [...newRequest.result];
+        let store = [];
+        let TotalAmount = 0;
+        Balance.push(store);
+
+        console.log(store);
+        for (let i = 0; i < StoreData.length; i++) {
+            if (StoreData[i].Email === email) {
+                store.push(StoreData[i]);
+            }
+        }
+        console.log(store);
+        var maxIndex;
+
+// the easy way
+maxIndex = store.length - 1;
+
+console.log(maxIndex);
+        // var maxIndex = 0;
+    
+    //   let newArray = [];
+    //   newArray.push(store[maxIndex]);
+    //   console.log(store[maxIndex].Current_Balance);
+      document.getElementById("balance-total").innerHTML = store[maxIndex].Current_Balance
+    
+        store.forEach((u) => {
+            let log = document.createElement("li");
+
+            TotalAmount = TotalAmount + u.Amount;
+
+            // console.log(log);
+
+            data += log.innerHTML = `<tr>
+                 <td><p class="font-weight-bold"> <span class="font-weight-normal">${u.Email}<span></p></td> 
+                 <td><p class="font-weight-bold"> <span class="font-weight-normal">${u.Type}<span></p></td>
+                 <td><p class="font-weight-bold"> <span class="font-weight-normal">${u.Amount}<span></p></td>
+                 <td><p class="font-weight-bold"> <span class="font-weight-normal">${u.Previous_Balance}<span></p></td> 
+                 <td><p class="font-weight-bold"> <span class="font-weight-normal">${u.Current_Balance}<span></p></td>
+                 <td><p class="font-weight-bold"> <span class="font-weight-normal">${u.Time}<span></p></td></tr>
+
+`;
+            // console.log(data);
+
+            // document.getElementById("myTable").innerHTML = data;
+        });
+
+        console.log(TotalAmount);
+
+        document.getElementById("myTable").innerHTML = data;
+    };
+}
+
+//  input value
+function getInputValue(inputId) {
+    const inputField = document.getElementById(inputId);
+
+    const inputAmountT = inputField.value;
+
+    const InputBalance = parseFloat(inputAmountT);
+
+    //  clear input field
+
+    inputField.value = "";
+
+    return InputBalance;
+}
+//  update value
+function updateTotalField(value, amount) {
+    const showBalance = document.getElementById(value);
+
+    const previousBalanceCheck = showBalance.innerText;
+    // console.log(previousBalanceCheck);
+    const previousTotal = parseFloat(previousBalanceCheck);
+
+    showBalance.innerText = previousTotal + amount;
+}
+
+// function getCurrentBalance() {
+//     const balanceTotal = document.getElementById("balance-total");
+
+//     const previousBalanceCheck = balanceTotal.innerText;
+//     const previousBalanceTotal = parseFloat(previousBalanceCheck);
+//     console.log(previousBalanceTotal);
+
+//     return previousBalanceTotal;
+// }
+//  Update balance
+function updateBalance(amount, Add) {
+    const balanceTotal = document.getElementById("balance-total");
+    console.log(balanceTotal);
+
+    const previousBalanceTotal = getCurrentBalance();
+    console.log(previousBalanceTotal);
+
+    if (Add == true) {
+        balanceTotal.innerText = previousBalanceTotal + amount;
+    } else {
+        balanceTotal.innerText = previousBalanceTotal - amount;
+    }
+}
+
+// deposit side
+document
+    .getElementById("deposit-button")
+    .addEventListener("click", function () {
+        const depositAmount = getInputValue("deposit-input");
+
+        if (depositAmount <= 0) return;
+
+        var email = location.search.split("name")[1];
+
+        // const previousBalanceTotal = getCurrentBalance("deposit-input");
+        // console.log(previousBalanceTotal);
+
+        // const TotalAmount = getCurrentBalance("balance-total") + depositAmount;
+
+        const time = DateTime(depositAmount);
+
+        const values = {
+            Email: email,
+            Type: "Deposit",
+            Amount: depositAmount,
+            // Previous_Balance: previousBalanceTotal,
+            Current_Balance: TotalAmount,
+            Time: time,
+        };
+        // console.log(values.Amount);
+
+        table.push(values);
+        addData(values);
+
+        if (depositAmount >= 0) {
+            updateTotalField("deposit-total", depositAmount);
+
+            updateBalance(depositAmount, true);
+
+            document.querySelector("#error").innerHTML = "";
+        } else {
+            document.querySelector("#error").innerHTML =
+                "<span style='color:red'>Enter You positive Number !!</span>";
+        }
+    });
+
+//  withdraw side
+
+document
+    .getElementById("Widthdraw-button")
+    .addEventListener("click", function () {
+        const widthdrawAmount = getInputValue("Widthdraw-input");
+
+        if (widthdrawAmount <= 0) return;
+        var email = location.search.split("name")[1];
+
+        const previousBalanceTotal = getCurrentBalance("Widthdraw-input");
+        console.log(previousBalanceTotal);
+
+        const TotalAmount =
+            getCurrentBalance("balance-total") - widthdrawAmount;
+        console.log(TotalAmount);
+        const time = DateTime(widthdrawAmount);
+
+        const values = {
+            Email: email,
+            Type: "Widthdraw",
+            Amount: widthdrawAmount,
+            Previous_Balance: previousBalanceTotal,
+            Current_Balance: TotalAmount,
+            Time: time,
+        };
+        table.push(values);
+        addData(values);
+
+        const CurrentBalance = getCurrentBalance();
+
+        if (widthdrawAmount > 0 && widthdrawAmount < CurrentBalance) {
+            updateTotalField("widthdraw-total", widthdrawAmount);
+
+            updateBalance(widthdrawAmount, false);
+
+            document.querySelector("#errors").innerHTML = "";
+        }
+
+        if (widthdrawAmount > CurrentBalance) {
+            document.querySelector("#errors").innerHTML =
+                "<span style='color:red'>Not Enough Balance!!</span>";
+        }
+    });
+
+function DateTime() {
+    var date = new Date();
+    var hours = date.getHours();
+    var days = date.getDay();
+    var minutes = date.getMinutes();
+    var ampm = hours >= 12 ? "pm" : "am";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    minutes = minutes < 10 ? "0" + minutes : minutes;
+    var strTime =
+        date.toDateString() + " " + hours + ":" + minutes + " " + ampm;
+    return strTime;
+}
